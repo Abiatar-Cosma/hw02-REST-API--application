@@ -6,8 +6,15 @@ const {
   addContactSchema,
   updateContactSchema,
 } = require("../../schemas/contactsSchemas");
-const validateBody = require('../../middlewares/validateBody');
-
+const validateBody = require("../../middlewares/validateBody");
+const {
+  listContacts,
+  getContactById,
+  removeContact,
+  addContact,
+  updateContact,
+  updateStatusContact,
+} = require("../../models/contacts");
 
 router.get("/", async (req, res, next) => {
   try {
@@ -31,7 +38,7 @@ router.get("/:contactId", async (req, res, next) => {
   }
 });
 
-router.post('/', validateBody(addContactSchema), async (req, res, next) => {
+router.post("/", validateBody(addContactSchema), async (req, res, next) => {
   try {
     const newContact = await contacts.addContact(req.body);
     res.status(201).json(newContact);
@@ -39,7 +46,6 @@ router.post('/', validateBody(addContactSchema), async (req, res, next) => {
     next(error);
   }
 });
-
 
 router.delete("/:contactId", async (req, res, next) => {
   try {
@@ -55,13 +61,36 @@ router.delete("/:contactId", async (req, res, next) => {
   }
 });
 
-router.put('/:contactId', validateBody(updateContactSchema), async (req, res, next) => {
+router.put(
+  "/:contactId",
+  validateBody(updateContactSchema),
+  async (req, res, next) => {
+    try {
+      const { contactId } = req.params;
+      const updatedContact = await contacts.updateContact(contactId, req.body);
+
+      if (!updatedContact) {
+        return res.status(404).json({ message: "Not Found" });
+      }
+
+      res.status(200).json(updatedContact);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.patch("/:contactId/favorite", async (req, res, next) => {
   try {
     const { contactId } = req.params;
-    const updatedContact = await contacts.updateContact(contactId, req.body);
+    const { favorite } = req.body;
+    if (favorite === undefined) {
+      return res.status(400).json({ message: "missing field favorite" });
+    }
+    const updatedContact = await updateStatusContact(contactId, { favorite });
 
     if (!updatedContact) {
-      return res.status(404).json({ message: 'Not Found' });
+      return res.status(404).json({ message: "Not found" });
     }
 
     res.status(200).json(updatedContact);
@@ -69,6 +98,5 @@ router.put('/:contactId', validateBody(updateContactSchema), async (req, res, ne
     next(error);
   }
 });
-
 
 module.exports = router;
