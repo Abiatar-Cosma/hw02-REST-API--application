@@ -2,20 +2,13 @@ const authenticate = require("../../middlewares/authenticate");
 const express = require("express");
 const router = express.Router();
 const contacts = require("../../models/contacts");
-const { emit } = require("../../app");
 const {
   addContactSchema,
   updateContactSchema,
 } = require("../../schemas/contactsSchemas");
 const validateBody = require("../../middlewares/validateBody");
-const {
-  listContacts,
-  getContactById,
-  removeContact,
-  addContact,
-  updateContact,
-  updateStatusContact,
-} = require("../../models/contacts");
+const { updateStatusContact } = require("../../models/contacts");
+
 
 router.get("/", authenticate, async (req, res, next) => {
   try {
