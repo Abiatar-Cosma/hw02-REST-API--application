@@ -1,31 +1,33 @@
+const authenticate = require("../../middlewares/authenticate");
 const express = require("express");
 const router = express.Router();
 const contacts = require("../../models/contacts");
-const { emit } = require("../../app");
 const {
   addContactSchema,
   updateContactSchema,
 } = require("../../schemas/contactsSchemas");
 const validateBody = require("../../middlewares/validateBody");
-const {
-  listContacts,
-  getContactById,
-  removeContact,
-  addContact,
-  updateContact,
-  updateStatusContact,
-} = require("../../models/contacts");
+const { updateStatusContact } = require("../../models/contacts");
 
-router.get("/", async (req, res, next) => {
+
+router.get("/", authenticate, async (req, res, next) => {
   try {
-    const allContacts = await contacts.listContacts();
-    res.status(200).json(allContacts);
+    const { page = 1, limit = 20, favorite } = req.query;
+    const skip = (page - 1) * limit;
+
+    const filter = { owner: req.user._id };
+    if (favorite !== undefined) {
+      filter.favorite = favorite === "true";
+    }
+
+    const contactsList = await contacts.listContacts(filter, skip, limit);
+    res.status(200).json(contactsList);
   } catch (error) {
     next(error);
   }
 });
 
-router.get("/:contactId", async (req, res, next) => {
+router.get("/:contactId", authenticate, async (req, res, next) => {
   try {
     const { contactId } = req.params;
     const contact = await contacts.getContactById(contactId);
@@ -38,16 +40,24 @@ router.get("/:contactId", async (req, res, next) => {
   }
 });
 
-router.post("/", validateBody(addContactSchema), async (req, res, next) => {
-  try {
-    const newContact = await contacts.addContact(req.body);
-    res.status(201).json(newContact);
-  } catch (error) {
-    next(error);
+router.post(
+  "/",
+  authenticate,
+  validateBody(addContactSchema),
+  async (req, res, next) => {
+    try {
+      const newContact = await contacts.addContact({
+        ...req.body,
+        owner: req.user._id,
+      });
+      res.status(201).json(newContact);
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
-router.delete("/:contactId", async (req, res, next) => {
+router.delete("/:contactId", authenticate, async (req, res, next) => {
   try {
     const { contactId } = req.params;
     const contact = await contacts.removeContact(contactId);
@@ -63,6 +73,7 @@ router.delete("/:contactId", async (req, res, next) => {
 
 router.put(
   "/:contactId",
+  authenticate,
   validateBody(updateContactSchema),
   async (req, res, next) => {
     try {
@@ -80,7 +91,7 @@ router.put(
   }
 );
 
-router.patch("/:contactId/favorite", async (req, res, next) => {
+router.patch("/:contactId/favorite", authenticate, async (req, res, next) => {
   try {
     const { contactId } = req.params;
     const { favorite } = req.body;
