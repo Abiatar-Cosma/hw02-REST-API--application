@@ -1,3 +1,4 @@
+const { required } = require("joi");
 const { Schema, model } = require("mongoose");
 
 const userSchema = new Schema(
@@ -19,6 +20,10 @@ const userSchema = new Schema(
     token: {
       type: String,
       default: null,
+    },
+    avatarURL: {
+      type: String,
+      required: true,
     },
   },
   { versionKey: false, timestamps: true }
