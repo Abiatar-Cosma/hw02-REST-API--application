@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const Joi = require("joi");
 const User = require("../../models/user");
+const gravatar = require("gravatar");
 
 const signupSchema = Joi.object({
   email: Joi.string().email().required(),
@@ -20,10 +21,12 @@ const signup = async (req, res, next) => {
       return res.status(409).json({ message: "Email in use" });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
+    const avatarURL = gravatar.url(email, { s: "250", d: "robohash" }, true);
 
     const newUser = await User.create({
       email,
       password: hashedPassword,
+      avatarURL,
     });
     res.status(201).json({
       user: {
