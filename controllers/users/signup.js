@@ -2,6 +2,10 @@ const bcrypt = require("bcryptjs");
 const Joi = require("joi");
 const User = require("../../models/user");
 const gravatar = require("gravatar");
+const { nanoid } = require("nanoid");
+const sendEmail = require("../../helpers/sendEmail");
+
+const BASE_URL = process.env.BASE_URL;
 
 const signupSchema = Joi.object({
   email: Joi.string().email().required(),
@@ -23,11 +27,23 @@ const signup = async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const avatarURL = gravatar.url(email, { s: "250", d: "robohash" }, true);
 
+    const verificationToken = nanoid();
+
     const newUser = await User.create({
       email,
       password: hashedPassword,
       avatarURL,
+      verificationToken,
+      verify: false,
     });
+
+    const verifyLink = `${BASE_URL}/users/verify/${verificationToken}`;
+    await sendEmail({
+      to: email,
+      subject: "Email Verification",
+      html: `<p>Click <a href='${verifyLink}'>aici</a> pentru a-ti verifica adresa de e-mail.</p>`,
+    });
+
     res.status(201).json({
       user: {
         email: newUser.email,
