@@ -12,10 +12,14 @@ const authenticate = require("../../middlewares/authenticate");
 const getCurrent = require("../../controllers/users/getCurrent");
 const updateSubscription = require("../../controllers/users/updateSubscription");
 const upload = require("../../middlewares/upload");
+const verifyEmail = require("../../controllers/users/verifyEmail");
+const resendVerifyEmail = require("../../controllers/users/resendVerifyEmail");
 
 const avatarsDir = path.join(__dirname, "../../", "public", "avatars");
 
+router.get("/verify/:verificationToken", verifyEmail);
 router.post("/signup", signup);
+router.post("/verify", resendVerifyEmail);
 router.post("/login", login);
 router.get("/logout", authenticate, logout);
 router.get("/current", authenticate, getCurrent);
